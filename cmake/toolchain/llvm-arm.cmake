@@ -25,6 +25,3 @@ set(CMAKE_LINKER  "${LLVM_TOOLCHAIN_DIR}/bin/ld.lld"       CACHE FILEPATH "")
 set(CMAKE_OBJCOPY "${LLVM_TOOLCHAIN_DIR}/bin/llvm-objcopy" CACHE FILEPATH "")
 set(CMAKE_OBJDUMP "${LLVM_TOOLCHAIN_DIR}/bin/llvm-objdump" CACHE FILEPATH "")
 set(CMAKE_SIZE    "${LLVM_TOOLCHAIN_DIR}/bin/llvm-size"    CACHE FILEPATH "")
-
-# Use lld; set here so it applies before project() calls add their own flags.
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=lld")
