@@ -21,6 +21,8 @@ target_compile_options(nautsyn_platform_teensy41 INTERFACE
     -ffreestanding
     -fno-exceptions
     -fno-rtti
+    -fno-unwind-tables
+    -fno-asynchronous-unwind-tables
 )
 
 target_compile_definitions(nautsyn_platform_teensy41 INTERFACE
