@@ -35,6 +35,22 @@ set_property(TARGET nautsyn_platform_teensy41 PROPERTY
     INTERFACE_LINK_DEPENDS "${TEENSY41_LINKER_SCRIPT}"
 )
 
+# teensy41_generate_hex(<target>)
+# Adds a POST_BUILD step that produces <target>.hex next to the ELF.
+# The .hex is what teensy_loader_cli expects.
+function(teensy41_generate_hex TARGET)
+    set(_hex "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.hex")
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+        COMMAND "${CMAKE_OBJCOPY}" -O ihex
+            -R .eeprom
+            "$<TARGET_FILE:${TARGET}>"
+            "${_hex}"
+        BYPRODUCTS "${_hex}"
+        COMMENT "Generating ${TARGET}.hex"
+        VERBATIM
+    )
+endfunction()
+
 target_link_options(nautsyn_platform_teensy41 INTERFACE
     --target=${TEENSY41_TARGET_TRIPLE}
     -mcpu=cortex-m7
