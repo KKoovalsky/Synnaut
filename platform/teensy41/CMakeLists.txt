@@ -7,8 +7,10 @@
 #   nautsyn_teensy41_flags    — compile/definition flags only (INTERFACE)
 #   nautsyn_teensy41_startup  — startup.c + clockspeed.c (OBJECT)
 #   platform::teensy41        — public target: flags + startup + linker (INTERFACE)
+#   platform::teensy41::uart  — opt-in LPUART6 polling driver (Serial1, pins 0/1)
 #
 # Application targets link platform::teensy41 and get everything automatically.
+# Add platform::teensy41::uart for UART support.
 
 cmake_minimum_required(VERSION 3.24)
 
@@ -74,6 +76,13 @@ target_link_options(nautsyn_platform_teensy41 INTERFACE
 set_property(TARGET nautsyn_platform_teensy41 PROPERTY
     INTERFACE_LINK_DEPENDS "${TEENSY41_LINKER_SCRIPT}"
 )
+
+# ── 4. UART driver (opt-in) ──────────────────────────────────────────────────
+# LPUART6 polling driver — Serial1, Teensy pin 0 (RX) / pin 1 (TX).
+# Link platform::teensy41::uart to pull in uart.c and expose uart.h.
+add_library(nautsyn_teensy41_uart STATIC uart.c)
+add_library(platform::teensy41::uart ALIAS nautsyn_teensy41_uart)
+target_link_libraries(nautsyn_teensy41_uart PUBLIC nautsyn_teensy41_flags)
 
 # ── teensy41_generate_hex(<target>) ──────────────────────────────────────────
 # Post-build step: produce <target>.hex alongside the ELF for teensy_loader_cli.
