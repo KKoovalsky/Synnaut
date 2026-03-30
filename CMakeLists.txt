@@ -11,6 +11,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-include(./cmake/platform/teensy41.cmake)
+add_subdirectory(platform/teensy41)
 
 add_subdirectory(tests/device/hello)
