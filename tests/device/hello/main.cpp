@@ -1,7 +1,7 @@
 // Teensy 4.1 – blink LED and echo received bytes over UART1 (pins 0/1, 115200 8N1)
 
 #include "imxrt.h"
-#include "uart.h"
+#include "uart_serial.h"
 
 // LED: Teensy pin 13 → pad GPIO_B0_03 → GPIO2_IO03 / GPIO7_IO03
 static constexpr uint32_t LED_BIT = 1u << 3;
@@ -21,14 +21,14 @@ extern "C" int main()
     GPIO7_GDIR |= LED_BIT;
 
     // UART1 setup
-    uart1_init(921600);
-    uart1_puts("NautSyn booted\r\n");
+    uart_serial_init(&uart_serial1, 921600);
+    uart_serial_puts(&uart_serial1, "NautSyn booted\r\n");
 
     while (true) {
         GPIO7_DR_TOGGLE = LED_BIT;
         delay_ms(500);
 
-        if (uart1_rxready())
-            uart1_putc((char)uart1_getc());
+        if (uart_serial_rxready(&uart_serial1))
+            uart_serial_putc(&uart_serial1, (char)uart_serial_getc(&uart_serial1));
     }
 }

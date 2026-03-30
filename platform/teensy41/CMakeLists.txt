@@ -78,9 +78,9 @@ set_property(TARGET nautsyn_platform_teensy41 PROPERTY
 )
 
 # ── 4. UART driver (opt-in) ──────────────────────────────────────────────────
-# LPUART6 polling driver — Serial1, Teensy pin 0 (RX) / pin 1 (TX).
-# Link platform::teensy41::uart to pull in uart.c and expose uart.h.
-add_library(nautsyn_teensy41_uart STATIC uart.c)
+# Polling LPUART driver for all 8 Serial instances (uart_serial1..8).
+# Link platform::teensy41::uart to pull in uart_serial.c and expose uart_serial.h.
+add_library(nautsyn_teensy41_uart STATIC uart_serial.c)
 add_library(platform::teensy41::uart ALIAS nautsyn_teensy41_uart)
 target_link_libraries(nautsyn_teensy41_uart PUBLIC nautsyn_teensy41_flags)
 
