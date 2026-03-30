@@ -17,7 +17,7 @@ target_compile_options(nautsyn_platform_teensy41 INTERFACE
     -mcpu=cortex-m7
     -mfpu=fpv5-d16
     -mfloat-abi=hard
-    # -mthumb
+    -mthumb
     -ffreestanding
     -fno-exceptions
     -fno-rtti
@@ -40,7 +40,8 @@ target_link_options(nautsyn_platform_teensy41 INTERFACE
     -mcpu=cortex-m7
     -mfpu=fpv5-d16
     -mfloat-abi=hard
-    # -mthumb
+    -mthumb
     -nostdlib
     -T "${TEENSY41_LINKER_SCRIPT}"
 )
+
