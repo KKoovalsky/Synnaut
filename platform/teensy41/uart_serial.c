@@ -180,5 +180,18 @@ int uart_serial_getc(const uart_serial_t *s)
 
 int uart_serial_rxready(const uart_serial_t *s)
 {
-    return (s->regs->STAT & LPUART_STAT_RDRF) ? 1 : 0;
+    uint32_t stat = s->regs->STAT;
+    // OR (overrun), NF (noise), FE (framing), PF (parity) are W1C.
+    // OR in particular halts reception until cleared — if left unhandled the
+    // UART stops receiving entirely.  Discard the corrupted byte and clear all
+    // error flags so the receiver re-enables for the next incoming byte.
+    // TODO: propagate error flags to the caller instead of silently discarding
+    //       the byte (e.g. return a negative error code or expose a separate
+    //       uart_serial_errors() query so the application can log or count them).
+    if (stat & (LPUART_STAT_OR | LPUART_STAT_NF | LPUART_STAT_FE | LPUART_STAT_PF)) {
+        s->regs->STAT = stat;      // W1C: write 1s back to clear the set flags
+        (void)s->regs->DATA;       // drain the error byte, clears RDRF
+        return 0;
+    }
+    return (stat & LPUART_STAT_RDRF) ? 1 : 0;
 }
