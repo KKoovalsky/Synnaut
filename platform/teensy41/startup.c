@@ -51,6 +51,26 @@ void usb_pll_start(void);
 void default_isr(void);
 uint32_t set_arm_clock(uint32_t frequency); // clockspeed.c
 
+// Install a handler into the RAM vector table.
+// index — Cortex-M vector number:
+//   0  initial MSP (data word, not a function pointer)
+//   1  Reset    
+//   2  NMI    
+//   3  HardFault
+//   11 SVCall   
+//   14 PendSV 
+//   15 SysTick   
+//   16+ peripheral IRQs (0–159)
+// VTOR points to _VectorsRam before main() is entered.
+static void attach_isr(uint32_t index, void (*handler)(void));
+
+// Cortex-M exception handlers — weak defaults route to default_isr.
+// When FreeRTOS is linked, port.c provides strong definitions for all three
+// (via the aliases in FreeRTOSConfig.h) which override these automatically.
+__attribute__((weak)) void SVC_Handler(void)     { default_isr(); }
+__attribute__((weak)) void PendSV_Handler(void)  { default_isr(); }
+__attribute__((weak)) void SysTick_Handler(void) { default_isr(); }
+
 // ---------------------------------------------------------------------------
 // Weak startup hooks
 // Defaults are FLASHMEM no-ops callable before ITCM is populated.
@@ -237,6 +257,13 @@ static void ResetHandler2(void)
     // silently falls through.
     for (i = 0; i < NVIC_NUM_INTERRUPTS + 16; i++)
         _VectorsRam[i] = default_isr;
+    // Entry 0 is the initial MSP value, not a function pointer.
+    // The FreeRTOS ARM_CM7 port reads VTOR[0] in prvPortStartFirstTask() to
+    // restore MSP before handing control to the first task via svc 0.
+    _VectorsRam[0] = (void (*)(void))((uint32_t)&_estack);
+    _VectorsRam[11] = SVC_Handler;
+    _VectorsRam[14] = PendSV_Handler;
+    _VectorsRam[15] = SysTick_Handler;
     for (i = 0; i < NVIC_NUM_INTERRUPTS; i++)
         NVIC_SET_PRIORITY(i, 128);
     SCB_VTOR = (uint32_t)_VectorsRam;
@@ -463,6 +490,11 @@ static void memory_clear(uint32_t *dest, uint32_t *dest_end)
         : [end] "r"(dest_end)
         : "r3", "memory"
     );
+}
+
+static void attach_isr(uint32_t n, void (*handler)(void))
+{
+    _VectorsRam[n] = handler;
 }
 
 // ---------------------------------------------------------------------------

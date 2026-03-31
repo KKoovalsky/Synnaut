@@ -1,34 +1,52 @@
-// Teensy 4.1 – blink LED and echo received bytes over UART1 (pins 0/1, 115200 8N1)
-
 #include "imxrt.h"
 #include "uart_serial.h"
+#include <FreeRTOS.h>
+#include <task.h>
 
-// LED: Teensy pin 13 → pad GPIO_B0_03 → GPIO2_IO03 / GPIO7_IO03
 static constexpr uint32_t LED_BIT = 1u << 3;
 
-static void delay_ms(uint32_t ms)
+static void task_blink(void *)
 {
-    // F_CPU cycles per ms, two instructions per iteration ≈ 1 cycle each at -O2
-    volatile uint32_t ticks = (F_CPU / 1000u / 2u) * ms;
-    while (ticks) { ticks -= 1; }
+    for (;;) {
+        GPIO7_DR_TOGGLE = LED_BIT;
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
+static void task_uart(void *)
+{
+    for (;;) {
+        if (uart_serial_rxready(&uart_serial1))
+            uart_serial_putc(&uart_serial1, (char)uart_serial_getc(&uart_serial1));
+        vTaskDelay(1);
+    }
+}
+
+extern "C" void vApplicationStackOverflowHook(TaskHandle_t, char *)
+{
+    __asm__ volatile("bkpt #0");
+    for (;;) __asm__ volatile("wfi");
+}
+
+extern "C" void vApplicationMallocFailedHook(void)
+{
+    __asm__ volatile("bkpt #0");
+    for (;;) __asm__ volatile("wfi");
 }
 
 extern "C" int main()
 {
-    // LED setup (GPIO_B0_03 / GPIO7 fast mirror)
+    // LED: Teensy pin 13 → GPIO_B0_03 → GPIO7 fast mirror
     CCM_CCGR0 |= CCM_CCGR0_GPIO2(CCM_CCGR_ON);
     IOMUXC_SW_MUX_CTL_PAD_GPIO_B0_03 = 5;
     GPIO7_GDIR |= LED_BIT;
 
-    // UART1 setup
     uart_serial_init(&uart_serial1, 921600);
-    uart_serial_puts(&uart_serial1, "NautSyn booted\r\n");
+    uart_serial_puts(&uart_serial1, "NautSyn FreeRTOS booting\r\n");
 
-    while (true) {
-        GPIO7_DR_TOGGLE = LED_BIT;
-        delay_ms(500);
+    xTaskCreate(task_blink, "blink", 256, nullptr, 1, nullptr);
+    xTaskCreate(task_uart,  "uart",  256, nullptr, 1, nullptr);
 
-        if (uart_serial_rxready(&uart_serial1))
-            uart_serial_putc(&uart_serial1, (char)uart_serial_getc(&uart_serial1));
-    }
+    vTaskStartScheduler();
+    for (;;) __asm__ volatile("wfi");
 }

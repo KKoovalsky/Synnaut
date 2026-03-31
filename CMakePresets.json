@@ -3,8 +3,17 @@
   "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
   "configurePresets": [
     {
+      "name": "base",
+      "hidden": true,
+      "cacheVariables": {
+        "FETCHCONTENT_BASE_DIR":             "${sourceDir}/.deps",
+        "FETCHCONTENT_UPDATES_DISCONNECTED": "ON"
+      }
+    },
+    {
       "name": "base_arm_gnu_gcc",
       "hidden": true,
+      "inherits": "base",
       "generator": "Ninja",
       "toolchainFile": "${sourceDir}/cmake/toolchain/arm-gnu-gcc.cmake"
     },

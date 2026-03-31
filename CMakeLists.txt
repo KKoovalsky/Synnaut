@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-add_subdirectory(platform/teensy41)
+add_subdirectory(platform/teensy41)  # must precede freertos.cmake (defines freertos_config)
+include(cmake/freertos.cmake)
 
 add_subdirectory(tests/device/hello)

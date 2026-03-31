@@ -48,12 +48,21 @@ target_include_directories(nautsyn_teensy41_flags INTERFACE
     ${TEENSY41_DIR}       # exposes imxrt.h
 )
 
+# ── freertos_config ──────────────────────────────────────────────────────────
+# Required by FreeRTOS-Kernel's CMakeLists.txt before FetchContent_MakeAvailable.
+# Exposes FreeRTOSConfig.h and propagates our CPU/FPU compile flags into the
+# kernel build so it compiles for the correct target.
+add_library(freertos_config INTERFACE)
+target_include_directories(freertos_config INTERFACE ${TEENSY41_DIR})
+target_link_libraries(freertos_config INTERFACE nautsyn_teensy41_flags)
+
 # ── 2. Startup object library ────────────────────────────────────────────────
 # OBJECT type forces the linker to include these translation units in every
 # executable that links platform::teensy41, even with --gc-sections.
 add_library(nautsyn_teensy41_startup OBJECT
     startup.c
     clockspeed.c
+    string_stubs.c
 )
 target_link_libraries(nautsyn_teensy41_startup PRIVATE
     nautsyn_teensy41_flags
@@ -66,6 +75,7 @@ add_library(platform::teensy41 ALIAS nautsyn_platform_teensy41)
 target_link_libraries(nautsyn_platform_teensy41 INTERFACE
     nautsyn_teensy41_flags
     $<TARGET_OBJECTS:nautsyn_teensy41_startup>
+    gcc  # compiler runtime (soft-division, ABI helpers, etc.)
 )
 target_link_options(nautsyn_platform_teensy41 INTERFACE
     $<$<CXX_COMPILER_ID:Clang,AppleClang>:--target=${TEENSY41_TARGET_TRIPLE}>
@@ -83,6 +93,14 @@ set_property(TARGET nautsyn_platform_teensy41 PROPERTY
 add_library(nautsyn_teensy41_uart STATIC uart_serial.c)
 add_library(platform::teensy41::uart ALIAS nautsyn_teensy41_uart)
 target_link_libraries(nautsyn_teensy41_uart PUBLIC nautsyn_teensy41_flags)
+
+# ── 5. FreeRTOS integration helpers (opt-in) ─────────────────────────────────
+# Installs SVC / PendSV / SysTick handlers into the RAM vector table.
+# Link platform::teensy41::freertos and call freertos_teensy41_init() before
+# vTaskStartScheduler().  Linking this target also pulls in freertos_kernel.
+add_library(nautsyn_teensy41_freertos INTERFACE)
+add_library(platform::teensy41::freertos ALIAS nautsyn_teensy41_freertos)
+target_link_libraries(nautsyn_teensy41_freertos INTERFACE freertos_kernel)
 
 # ── teensy41_generate_hex(<target>) ──────────────────────────────────────────
 # Post-build step: produce <target>.hex alongside the ELF for teensy_loader_cli.
