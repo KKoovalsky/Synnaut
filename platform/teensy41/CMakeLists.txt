@@ -7,10 +7,12 @@
 #   nautsyn_teensy41_flags    — compile/definition flags only (INTERFACE)
 #   nautsyn_teensy41_startup  — startup.c + clockspeed.c (OBJECT)
 #   platform::teensy41        — public target: flags + startup + linker (INTERFACE)
-#   platform::teensy41::uart  — opt-in LPUART6 polling driver (Serial1, pins 0/1)
+#   platform::teensy41::uart    — opt-in LPUART6 polling driver (Serial1, pins 0/1)
+#   platform::teensy41::sai     — opt-in SAI1 polling driver (stereo 32-bit I2S TX)
+#   platform::teensy41::freertos — opt-in FreeRTOS integration
 #
 # Application targets link platform::teensy41 and get everything automatically.
-# Add platform::teensy41::uart for UART support.
+# Add opt-in sub-targets for UART, SAI, and FreeRTOS support.
 
 cmake_minimum_required(VERSION 3.24)
 
@@ -94,7 +96,15 @@ add_library(nautsyn_teensy41_uart STATIC uart_serial.c)
 add_library(platform::teensy41::uart ALIAS nautsyn_teensy41_uart)
 target_link_libraries(nautsyn_teensy41_uart PUBLIC nautsyn_teensy41_flags)
 
-# ── 5. FreeRTOS integration helpers (opt-in) ─────────────────────────────────
+# ── 5. SAI driver (opt-in) ───────────────────────────────────────────────────
+# Polling SAI1 driver: stereo 32-bit I2S TX with PLL4 audio clock.
+# Supports SAI_MODE_MASTER (SAI drives BCLK+LRCLK) and SAI_MODE_SLAVE
+# (PCM5122 drives BCLK+LRCLK; SAI still outputs MCLK for PCM5122 SCKI).
+add_library(nautsyn_teensy41_sai STATIC sai.c)
+add_library(platform::teensy41::sai ALIAS nautsyn_teensy41_sai)
+target_link_libraries(nautsyn_teensy41_sai PUBLIC nautsyn_teensy41_flags)
+
+# ── 6. FreeRTOS integration helpers (opt-in) ─────────────────────────────────
 # Installs SVC / PendSV / SysTick handlers into the RAM vector table.
 # Link platform::teensy41::freertos and call freertos_teensy41_init() before
 # vTaskStartScheduler().  Linking this target also pulls in freertos_kernel.

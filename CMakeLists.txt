@@ -15,3 +15,4 @@ add_subdirectory(platform/teensy41)  # must precede freertos.cmake (defines free
 include(cmake/freertos.cmake)
 
 add_subdirectory(tests/device/hello)
+add_subdirectory(tests/device/sai_clocks)
