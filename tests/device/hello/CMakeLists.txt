@@ -1,4 +1,4 @@
-add_executable(hello main.cpp)
+add_executable(hello hello.cpp)
 
 target_link_libraries(hello PRIVATE
     platform::teensy41
